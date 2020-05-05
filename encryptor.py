@@ -4,13 +4,30 @@ import string
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("part")
-parser.add_argument("--cipher")
-parser.add_argument("--key")
-parser.add_argument("--input-file")
-parser.add_argument("--output-file")
-parser.add_argument("--text-file")
-parser.add_argument("--model-file")
+subparsers = parser.add_subparsers(dest='part', help='what to do')
+
+encode = subparsers.add_parser('encode', help='encode open text')
+decode = subparsers.add_parser('decode', help='decode encrypted text')
+train = subparsers.add_parser('train', help='train letter distribution info')
+hack = subparsers.add_parser('hack', help='hack encrypted text')
+
+encode.add_argument('--cipher', dest='cipher', help='cipher')
+encode.add_argument('--key', dest='key', help='key')
+encode.add_argument('--input-file', dest='input_file', help='input file')
+encode.add_argument('--output-file', dest='output_file', help='output file')
+
+decode.add_argument('--cipher', dest='cipher', help='cipher')
+decode.add_argument('--key', dest='key', help='key')
+decode.add_argument('--input-file', dest='input_file', help='input file')
+decode.add_argument('--output-file', dest='output_file', help='output file')
+
+train.add_argument('--text-file', dest='text_file', help='text file')
+train.add_argument('--model-file', dest='model_file', help='model file')
+
+hack.add_argument('--input-file', dest='input_file', help='input file')
+hack.add_argument('--output-file', dest='output_file', help='output file')
+hack.add_argument('--model-file', dest='model_file', help='model file')
+
 args = parser.parse_args()
 
 
@@ -458,4 +475,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
