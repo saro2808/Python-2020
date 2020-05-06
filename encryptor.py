@@ -66,7 +66,7 @@ baudot_code = {
     '1': 24
 }
 
-space_punct_list = string.punctuation + ' ' + '\t' + '\n'
+space_punct_list = string.punctuation + string.whitespace
 len_space_punct = len(space_punct_list)
 
 
@@ -75,7 +75,7 @@ def is_latin(s: str) -> bool:
 
 
 def is_cyrillic(s: str) -> bool:
-    return ord('А') <= ord(s) <= ord('я')
+    return ord('А') <= ord(s) <= ord('Я') or ord('а') <= ord(s) <= ord('я')
 
 
 def word_to_keyword(s: str, key: str) -> str:
@@ -317,7 +317,7 @@ def count_percentage(letters: list, _all: int, alphabet_length: int) -> list:
 def generate_key_vernam(s: str) -> str:
     key = ''
     for i in s:
-        if i in baudot_code.keys():
+        if i in baudot_code:
             key += get_key(random.randint(0, 32))
     return key
 
@@ -327,10 +327,10 @@ def generate_key_vernam(s: str) -> str:
 def check_key_correctness(s: str, key: str) -> bool:
     total = 0
     for i in key:
-        if i not in baudot_code.keys():
+        if i not in baudot_code:
             return False
     for i in s:
-        if i in baudot_code.keys():
+        if i in baudot_code:
             total += 1
     if total == len(key):
         return True
@@ -348,7 +348,7 @@ def encode_decode_vernam(s: str, key: str) -> str:
     i = 0
     i_key = 0
     while i < len(s):
-        while i < len(s) and s[i] not in baudot_code.keys():
+        while i < len(s) and s[i] not in baudot_code:
             s_new += s[i]
             i += 1
         if i == len(s):
@@ -361,6 +361,73 @@ def encode_decode_vernam(s: str, key: str) -> str:
         i += 1
         i_key += 1
     return s_new
+
+
+def train():
+    if args.text_file:
+        try:
+            with open(f"{args.text_file}", mode='r') as file:
+                s = file.read()
+        except OSError:
+            print(f"error: could not open/read file {args.text_file}")
+    else:
+        s = input()
+
+    j = 0
+    while j < len(s) and not is_cyrillic(s[j]) and not is_latin(s[j]):
+        j += 1
+    alphabet_length = 32 * is_cyrillic(s[j]) + 26 * is_latin(s[j])
+    total = 0
+    _each_letter = [0] * alphabet_length
+    s_len = len(s)
+    i = 0
+    while i < s_len:
+        if is_latin(s[i]):
+            if s[i].isupper():
+                _each_letter[ord(s[i]) - ord('A')] += 1
+            else:
+                _each_letter[ord(s[i]) - ord('a')] += 1
+            total += 1
+        elif is_cyrillic(s[i]):
+            if s[i].isupper():
+                _each_letter[ord(s[i]) - ord('А')] += 1
+            else:
+                _each_letter[ord(s[i]) - ord('а')] += 1
+            total += 1
+        i += 1
+    if total > 0:
+        _etalon = ''
+        for i in range(alphabet_length):
+            _etalon += str(_each_letter[i] / total)
+            _etalon += ' '
+        with open(f"{args.model_file}", 'w') as file:
+            file.write(_etalon)
+    else:
+        print("error: no latin and cyrillic letters found")
+
+
+def hack():
+    try:
+        with open(f'{args.model_file}', 'r') as file:
+            info = file.read()
+    except OSError:
+        print(f"error: could not open/read {file}")
+
+    etalon = info.split()
+    s = read_info()
+    j = 0
+    while j < len(s) and not is_cyrillic(s[j]) and not is_latin(s[j]):
+        j += 1
+    alphabet_length = 0
+    if is_latin(s[j]):
+        alphabet_length = 26
+    elif is_cyrillic(s[j]):
+        alphabet_length = 32
+    each_letter = [[0] * alphabet_length for _ in range(alphabet_length)]
+    each_letter = count_percentage(each_letter, len(s), alphabet_length)
+    all_strs = find_caesar(s, each_letter)
+    best_str = compare_exactness(all_strs, each_letter, etalon, alphabet_length)
+    write_info(best_str)
 
 
 def main():
@@ -408,70 +475,12 @@ def main():
         write_info(s_new)
 
     elif args.part == 'train':
-        if args.text_file:
-            try:
-                with open(f"{args.text_file}", mode='r') as file:
-                    s = file.read()
-            except OSError:
-                print(f"error: could not open/read file {args.text_file}")
-        else:
-            s = input()
-
-        j = 0
-        while j < len(s) and not is_cyrillic(s[j]) and not is_latin(s[j]):
-            j += 1
-        alphabet_length = 32 * is_cyrillic(s[j]) + 26 * is_latin(s[j])
-        total = 0
-        _each_letter = [0] * alphabet_length
-        s_len = len(s)
-        i = 0
-        while i < s_len:
-            if is_latin(s[i]):
-                if s[i].isupper():
-                    _each_letter[ord(s[i]) - ord('A')] += 1
-                else:
-                    _each_letter[ord(s[i]) - ord('a')] += 1
-                total += 1
-            elif is_cyrillic(s[i]):
-                if s[i].isupper():
-                    _each_letter[ord(s[i]) - ord('А')] += 1
-                else:
-                    _each_letter[ord(s[i]) - ord('а')] += 1
-                total += 1
-            i += 1
-        if total > 0:
-            _etalon = ''
-            for i in range(alphabet_length):
-                _etalon += str(_each_letter[i] / total)
-                _etalon += ' '
-            with open(f"{args.model_file}", 'w') as file:
-                file.write(_etalon)
-        else:
-            print("error: no latin and cyrillic letters found")
+        train()
 
     elif args.part == 'hack':
-        try:
-            with open(f'{args.model_file}', 'r') as file:
-                info = file.read()
-        except OSError:
-            print(f"error: could not open/read {file}")
-
-        etalon = info.split()
-        s = read_info()
-        j = 0
-        while j < len(s) and not is_cyrillic(s[j]) and not is_latin(s[j]):
-            j += 1
-        alphabet_length = 0
-        if is_latin(s[j]):
-            alphabet_length = 26
-        elif is_cyrillic(s[j]):
-            alphabet_length = 32
-        each_letter = [[0] * alphabet_length for _ in range(alphabet_length)]
-        each_letter = count_percentage(each_letter, len(s), alphabet_length)
-        all_strs = find_caesar(s, each_letter)
-        best_str = compare_exactness(all_strs, each_letter, etalon, alphabet_length)
-        write_info(best_str)
+        hack()
 
 
 if __name__ == '__main__':
     main()
+
