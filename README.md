@@ -12,4 +12,4 @@
 
 [contest 6](https://contest.yandex.ru/contest/18006)
 
-[Ревью 1. Шифратор](https://docs.google.com/document/d/1yg11OT8vSxZmvEvbYFVvkyGtSzgfCyVg1dO0MHpGg28/edit#heading=h.e1tinuq81nkc)
+[Review 1. Encryptor](https://docs.google.com/document/d/1yg11OT8vSxZmvEvbYFVvkyGtSzgfCyVg1dO0MHpGg28/edit#heading=h.e1tinuq81nkc)
